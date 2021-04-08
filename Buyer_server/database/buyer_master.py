@@ -1,5 +1,5 @@
 import buyer_pb2_grpc, buyer_pb2
-import grpc, sys
+import grpc, sys, asyncio
 import random, pickle
 from config import DBConstants
 from asyncpg.exceptions import UniqueViolationError
@@ -39,11 +39,14 @@ class BuyerMasterServicer(buyer_pb2_grpc.BuyerMasterServicer):
         sock.sendto(send_message, host_port)
 
     @staticmethod
-    def rotating_sequencer_ABP(request, context, method_name, string_id=None):
+    async def rotating_sequencer_ABP(request, context, method_name, string_id=None):
 
         from config import sock
 
         random_id = None
+        request_messages_dict = get_messages_dict('local')
+        sequence_messages_dict = get_messages_dict('global')
+
         if context != Request_Constants.context:
             # print("Sending request message.......", context, Request_Constants.context)
             incr_sequence_number('local')
@@ -83,10 +86,20 @@ class BuyerMasterServicer(buyer_pb2_grpc.BuyerMasterServicer):
                                           "method_name": request.get('method_name'),
                                           'message_type': request.get('message_type')})
 
+        # to fetch sid, seq, request from the server who broadcasted the request, in case the current server
+        # is the server receiving client request, we take current server's sid and seq
+        if context == Request_Constants.context:
+            sid = request['sid']
+            seq = request['seq']
+            client_req = request['request']
+        else:
+            sid = get_current_server_number()
+            seq = get_sequence_number('local')
+            client_req = request
+
+
         if get_sequence_number('global') % ABP_servers.total_hosts == get_current_server_number():
             # clear_dict('global')
-            request_messages_dict = get_messages_dict('local')
-            sequence_messages_dict = get_messages_dict('global')
             curr_global_sequence_no = get_sequence_number('global')
 
             # condition 3.1
@@ -95,32 +108,31 @@ class BuyerMasterServicer(buyer_pb2_grpc.BuyerMasterServicer):
                     if sequence_messages_dict[i][0] in request_messages_dict:
                         continue
                 server_number = i % ABP_servers.total_hosts
-                BuyerMasterServicer.send_retransmit_request(server_number, i)
                 # poll into dict and call the retransmit function until it comes in the dictionary
-
-            # check for condition 3.2
+                while i not in sequence_messages_dict:
+                    BuyerMasterServicer.send_retransmit_request(server_number, i)
+                    print("Sleep, Sequence number missing :- {}, sending retransmit request".format(i))
+                    await asyncio.sleep(0.5)
 
             print("sending sequence number.......", get_current_server_number(), ABP_servers.total_hosts,
                   curr_global_sequence_no)
 
-            # to fetch sid, seq, request from the server who broadcasted the request, in case the current server
-            # is the server receiving client request, we take current server's sid and seq
-            if context == Request_Constants.context:
-                sid = request['sid']
-                seq = request['seq']
-                client_req = request['request']
-            else:
-                sid = get_current_server_number()
-                seq = get_sequence_number('local')
-                client_req = request
+            # check for condition 3.2
+            i = 0
+            while i < seq:
+                if (sid, i) in request_messages_dict:
+                    val = request_messages_dict[(sid, i)]
+                    if 'global' in val:
+                        i += 1
+                        continue
+                    print("Sleep, condition 3.2 (sid, seq) :- {}".format((sid, i)))
+                    await asyncio.sleep(0.5)
 
-
-            # check for sequence number condition 3 in the google sheet
             insert_into_sequence_messages(curr_global_sequence_no, ((sid, seq), 'metadata'))
-            request_msg_dict_val = get_messages_dict('local')[(sid, seq)]
+            request_msg_dict_val = request_messages_dict[(sid, seq)]
             request_msg_dict_val['global'] = curr_global_sequence_no
-            print("changed request_dict_val :- ", request_msg_dict_val)
-            print("change in request_messages_dict :- ", get_messages_dict('local'))
+            # print("changed request_dict_val :- ", request_msg_dict_val)
+            # print("change in request_messages_dict :- ", get_messages_dict('local'))
 
             # client_req is not used currently
             send_message = pickle.dumps({"global": curr_global_sequence_no, "sid": sid,
@@ -130,14 +142,27 @@ class BuyerMasterServicer(buyer_pb2_grpc.BuyerMasterServicer):
                     sock.sendto(send_message, host)
             incr_sequence_number('global')
 
+        # condition 1.1
+        for i in range(get_sequence_number('global')):
+            if i in sequence_messages_dict:
+                req_key_tuple = sequence_messages_dict[i][0]
+                if req_key_tuple in request_messages_dict:
+                    if 'global' in request_messages_dict[req_key_tuple]:
+                        continue
+
+            print("Sleep, condition 1.1 global seq :- {}".format(i))
+            await asyncio.sleep(0.5)
+
         # to convert the request to actual client request. the condition is to check whether the current server received
         # request from client or UDP request from another server
         if context == Request_Constants.context:
             random_id = request.get(string_id)
             request = request['request']
             print("request after request and sequence message functions :- ", request)
-        return request, random_id
 
+        # while()
+
+        return request, random_id
 
     async def SearchItemCart(self, request, context):
         """search items from the database.
@@ -303,9 +328,9 @@ class BuyerMasterServicer(buyer_pb2_grpc.BuyerMasterServicer):
         from models.buyers import Buyers
 
         self.print_request(request, context)
-        request, buyer_id = BuyerMasterServicer.rotating_sequencer_ABP(request=request, context=context,
-                                                                       method_name='CreateAccount',
-                                                                       string_id='buyer_id')
+        request, buyer_id = await BuyerMasterServicer.rotating_sequencer_ABP(request=request, context=context,
+                                                                             method_name='CreateAccount',
+                                                                             string_id='buyer_id')
 
         try:
             buyer = await Buyers.create(id=buyer_id, name=request.name,
