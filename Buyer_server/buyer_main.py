@@ -57,8 +57,8 @@ async def listen_on_udp():
                                                                             'metadata'))
                 request_msg_dict_val = get_messages_dict('local')[(request_data.get('sid'), request_data.get('seq'))]
                 request_msg_dict_val['global'] = request_data.get('global')
-                print("changed request_dict_val :- ", request_msg_dict_val)
-                print("change in request_messages_dict :- ", get_messages_dict('local'))
+                # print("changed request_dict_val :- ", request_msg_dict_val)
+                # print("change in request_messages_dict :- ", get_messages_dict('local'))
 
                 set_global_sequence_number(request_data.get('global') + 1)
 
