@@ -6,7 +6,8 @@ from asyncpg.exceptions import UniqueViolationError
 from google.protobuf.timestamp_pb2 import Timestamp
 from sqlalchemy import and_
 from config import ABP_servers, Request_Constants, get_sequence_number, incr_sequence_number, get_current_server_number, \
-    insert_into_sequence_messages, insert_into_request_messages, get_current_server_udp_port, get_messages_dict, clear_dict
+    insert_into_sequence_messages, insert_into_request_messages, get_current_server_udp_port, get_messages_dict, \
+    clear_dict, get_raft_buyer
 
 
 class BuyerMasterServicer(buyer_pb2_grpc.BuyerMasterServicer):
@@ -155,14 +156,16 @@ class BuyerMasterServicer(buyer_pb2_grpc.BuyerMasterServicer):
 
         # to convert the request to actual client request. the condition is to check whether the current server received
         # request from client or UDP request from another server
+        is_raft_execute = True
         if context == Request_Constants.context:
             random_id = request.get(string_id)
             request = request['request']
+            is_raft_execute = False
             print("request after request and sequence message functions :- ", request)
 
         # while()
 
-        return request, random_id
+        return request, random_id, is_raft_execute
 
     async def SearchItemCart(self, request, context):
         """search items from the database.
@@ -328,7 +331,7 @@ class BuyerMasterServicer(buyer_pb2_grpc.BuyerMasterServicer):
         from models.buyers import Buyers
 
         self.print_request(request, context)
-        request, buyer_id = await BuyerMasterServicer.rotating_sequencer_ABP(request=request, context=context,
+        request, buyer_id, _ = await BuyerMasterServicer.rotating_sequencer_ABP(request=request, context=context,
                                                                              method_name='CreateAccount',
                                                                              string_id='buyer_id')
 
@@ -382,14 +385,22 @@ class BuyerMasterServicer(buyer_pb2_grpc.BuyerMasterServicer):
         from zeep import Client
         from config import Financial_transactions
 
-        client = Client(Financial_transactions.host_and_port_wsdl)
-        result = client.service.pay_using_card(request.card_name, request.card_number, request.card_expiry)
-        result = result[0]
-        print("card result is :- ", result)
+        request, _, is_raft_execute = await BuyerMasterServicer.rotating_sequencer_ABP(request=request, context=context,
+                                                                                       method_name='MakePurchase')
+
+        # client = Client(Financial_transactions.host_and_port_wsdl)
+        # result = client.service.pay_using_card(request.card_name, request.card_number, request.card_expiry)
+        # result = result[0]
+        # print("card result is :- ", result)
+
+        # to remove code
+        result = Financial_transactions.success
+
         if result == Financial_transactions.failure:
             context.set_code(grpc.StatusCode.NOT_FOUND)
             context.set_details('card related transaction was unsuccessful.')
             return buyer_pb2.MakePurchaseResponse(buyer_id=request.buyer_id, transaction_status=False)
+
         self.print_request(request, context)
         buyer_cart = await BuyerCart.query.where(and_(BuyerCart.buyer_id == request.buyer_id,
                                                       BuyerCart.checked_out == False)).gino.all()
@@ -398,28 +409,35 @@ class BuyerMasterServicer(buyer_pb2_grpc.BuyerMasterServicer):
             # check quantity, proceed only if enough quantity available in Item db
             # make sufficient item quantity as purchased
             # update seller num_items_sold count
-            # remove insuffient items from cart
+            # remove insufficient items from cart
             for cart_item in buyer_cart:
                 item = await Items.query.where(Items.id == cart_item.item_id).gino.first()
                 seller = await Sellers.query.where(Sellers.id == item.seller_id).gino.first()
                 if item and item.quantity >= cart_item.quantity:
                     diff = item.quantity - cart_item.quantity
-                    print("quantities :- ", (item.quantity, cart_item.quantity))
-                    await item.update(quantity=diff).apply()
-                    # get buyer cart for same item with checked_out = True.first()
+                    print("item_id, quantities :- ", (item.id, item.quantity, cart_item.quantity))
+                    print("starting to execute Raft is_raft_execute :- ")
+                    if is_raft_execute:
+                        print("executing Raft for item id :- ", cart_item.item_id)
+                        print("------------------------------------------------------------------")
+                        get_raft_buyer().update_item(cart_item.item_id, diff)
+                    # await item.update(quantity=diff).apply()
+
                     buyer_cart_purchased = await BuyerCart.query.where(and_(BuyerCart.buyer_id == request.buyer_id,
-                                                      BuyerCart.checked_out == True)).gino.first()
-                    await cart_item.update(checked_out=True).apply()
-                    if buyer_cart_purchased != None:
-                        await cart_item.update(seller_review=buyer_cart_purchased.seller_review.name)
+                                                                            BuyerCart.item_id == cart_item.item_id,
+                                                                            BuyerCart.checked_out == True)).gino.first()
+                    # if buyer_cart_purchased != None:
+                    #     await cart_item.update(seller_review=buyer_cart_purchased.seller_review.name).apply()
+                    # await cart_item.update(checked_out=True).apply()
                     await seller.update(num_items_sold=seller.num_items_sold+cart_item.quantity).apply()
                 else:
                     await cart_item.delete()
 
             return buyer_pb2.MakePurchaseResponse(buyer_id=request.buyer_id, transaction_status=True)
         else:
-            context.set_code(grpc.StatusCode.NOT_FOUND)
-            context.set_details('Cart is empty.')
+            if context != Request_Constants.context:
+                context.set_code(grpc.StatusCode.NOT_FOUND)
+                context.set_details('Cart is empty.')
             return buyer_pb2.MakePurchaseResponse()          
 
     async def ProvideFeedback(self, request, context):
@@ -434,10 +452,10 @@ class BuyerMasterServicer(buyer_pb2_grpc.BuyerMasterServicer):
         from database import db_customer as db
         self.print_request(request, context)
         buyer_carts = await BuyerCart.query.where(and_(BuyerCart.item_id == request.item_id,
-                                                    BuyerCart.buyer_id == request.buyer_id,
-                                                    BuyerCart.checked_out == True)).gino.all()
+                                                       BuyerCart.buyer_id == request.buyer_id,
+                                                       BuyerCart.checked_out == True)).gino.all()
+        # BuyerCart.seller_review == review_type.NA.name
 
-        #BuyerCart.seller_review == review_type.NA.name
         print(buyer_carts)
         if buyer_carts:
             if buyer_carts[0].seller_review.name == 'NA':
@@ -446,7 +464,6 @@ class BuyerMasterServicer(buyer_pb2_grpc.BuyerMasterServicer):
                     context.set_code(grpc.StatusCode.NOT_FOUND)
                     context.set_details('Feedback update failed - item not available')
                     return buyer_pb2.ProvideFeedbackResponse()
-
                 seller = await Sellers.query.where(Sellers.id == item.seller_id).gino.first()
                 if seller is None:
                     context.set_code(grpc.StatusCode.NOT_FOUND)
@@ -456,13 +473,16 @@ class BuyerMasterServicer(buyer_pb2_grpc.BuyerMasterServicer):
                     await seller.update(feedback=(seller.feedback[0] + 1, seller.feedback[1])).apply()
                 else:
                     await seller.update(feedback=(seller.feedback[0], seller.feedback[1] + 1)).apply()
-
                 for buyer_cart in buyer_carts:
                     if request.feedback == True:
                         await buyer_cart.update(seller_review=review_type.UP.name).apply()
                     else:
                         await buyer_cart.update(seller_review=review_type.DOWN.name).apply()
                 return buyer_pb2.ProvideFeedbackResponse(buyer_id=request.buyer_id)
+            else:
+                context.set_code(grpc.StatusCode.NOT_FOUND)
+                context.set_details('Item review already present.')
+                return buyer_pb2.ProvideFeedbackResponse()
         else:
             context.set_code(grpc.StatusCode.NOT_FOUND)
             context.set_details('No item in buyer cart')

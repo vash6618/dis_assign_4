@@ -1,4 +1,5 @@
-import socket
+import socket, asyncio
+from sqlalchemy import create_engine
 
 class DBConstants:
     Successful_update = 'UPDATE 1'
@@ -22,10 +23,11 @@ current_host_number = 0
 UDP_PORT = 5005
 sequence_messsages = {}
 request_messages = {}
-
+raft_buyer = None
 
 class ABP_servers:
     hosts = [('127.0.0.1', 5005), ('127.0.0.1', 5006), ('127.0.0.1', 5007)]
+    raft_servers = [('127.0.0.1', 5010), ('127.0.0.1', 5011), ('127.0.0.1', 5012)]
     total_hosts = len(hosts)
 
 class Request_Constants:
@@ -110,3 +112,45 @@ def clear_dict(message_type):
         request_messages = {}
 
 
+from pysyncobj import SyncObj, replicated_sync
+sql_alchemy_obj = None
+
+def init_sql_alchemy_obj():
+    global sql_alchemy_obj
+    sql_alchemy_obj = create_engine(DBConstants.DB_product)
+
+
+class RaftBuyer(SyncObj):
+    def __init__(self):
+        super(RaftBuyer, self).__init__(
+            ABP_servers.raft_servers[get_current_server_number()][0] + ':' + str(ABP_servers.raft_servers[get_current_server_number()][1]),
+            [host[0] + ':' + str(host[1]) for host in ABP_servers.raft_servers if host !=
+             ABP_servers.raft_servers[get_current_server_number()]])
+        print("Raft buyer constructor :- ", ABP_servers.raft_servers[get_current_server_number()][0] + ':' + str(ABP_servers.raft_servers[get_current_server_number()][1]))
+        print(sql_alchemy_obj)
+
+    def update_func(self, item_id, diff):
+        from models.items import Items
+        # asyncio.run_coroutine_threadsafe(Items.update.values(quantity=diff).where(Items.id == item_id).gino.status(),
+        #                                  self.loop)
+        with sql_alchemy_obj.connect() as con:
+            con.execute('Update {} set quantity={} where id={}'.format(Items.__tablename__, diff, item_id))
+
+
+    @replicated_sync
+    def update_item(self, item_id, diff):
+        print("Raft, updating item :- ", item_id)
+        # asyncio.create_task(Items.update.values(quantity=diff).where(Items.id == item_id).gino.status())
+        self.update_func(item_id, diff)
+        # loop.create_task(Items.update.values(quantity=diff).where(Items.id == item_id).gino.status())
+        # await Items.update.values(quantity=diff).where(Items.id == item_id).gino.status()
+
+
+def init_raft_buyer():
+    global raft_buyer
+    raft_buyer = RaftBuyer()
+
+
+
+def get_raft_buyer():
+    return raft_buyer
