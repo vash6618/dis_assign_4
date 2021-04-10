@@ -7,7 +7,8 @@ from config import DBConstants
 # Connect to the database
 db_product = None
 db_customer = None
-async def connect_db():
+async def connect_db(server_number):
+    print("connect_db init :- ", server_number)
     import ssl
 
     ctx = ssl.create_default_context(cafile="")
@@ -16,8 +17,8 @@ async def connect_db():
     global db_product, db_customer
     db_product = Gino()
     db_customer = Gino()
-    await db_product.set_bind(DBConstants.DB_product, echo=True, ssl=ctx)
-    await db_customer.set_bind(DBConstants.DB_customer, echo=True, ssl=ctx)
+    await db_product.set_bind(DBConstants.DB_products[server_number], echo=True, ssl=ctx)
+    await db_customer.set_bind(DBConstants.DB_customers[server_number], echo=True, ssl=ctx)
     print(db_product)
     print("db_customer:", end=" ")
     print(db_customer)

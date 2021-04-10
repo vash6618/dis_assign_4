@@ -4,8 +4,12 @@ from sqlalchemy import create_engine
 class DBConstants:
     Successful_update = 'UPDATE 1'
     Successful_delete = 'DELETE 1'
-    DB_product = 'postgresql://postgres:ds5673@35.193.117.225:5432/product_database'
-    DB_customer = 'postgresql://postgres:ds5673@35.232.192.83:5432/customer_database'
+    DB_products = ['postgresql://postgres:ds5673@35.193.117.225:5432/product_database',
+                   'postgresql://postgres:ds5673@34.69.156.181:5432/product_database',
+                   'postgresql://postgres:ds5673@34.69.171.76:5432/product_database']
+    DB_customers = ['postgresql://postgres:ds5673@35.232.192.83:5432/customer_database',
+                    'postgresql://postgres:ds5673@34.123.110.112:5432/customer_database',
+                    'postgresql://postgres:ds5673@35.188.148.198:5432/customer_database']
 
 
 class Financial_transactions:
@@ -117,7 +121,7 @@ sql_alchemy_obj = None
 
 def init_sql_alchemy_obj():
     global sql_alchemy_obj
-    sql_alchemy_obj = create_engine(DBConstants.DB_product)
+    sql_alchemy_obj = create_engine(DBConstants.DB_products[get_current_server_number()])
 
 
 class RaftBuyer(SyncObj):

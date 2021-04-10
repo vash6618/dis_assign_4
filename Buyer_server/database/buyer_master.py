@@ -212,6 +212,7 @@ class BuyerMasterServicer(buyer_pb2_grpc.BuyerMasterServicer):
             request: The request value for the RPC.
             context (grpc.ServicerContext)
         """
+        request, _, _ = await BuyerMasterServicer.rotating_sequencer_ABP(request=request, context=context, method_name='AddToCart')
         from models.buyer_cart import BuyerCart
         from models.items import Items
         self.print_request(request, context)
@@ -257,6 +258,8 @@ class BuyerMasterServicer(buyer_pb2_grpc.BuyerMasterServicer):
         """
         from models.buyer_cart import BuyerCart
         self.print_request(request, context)
+        request, _, _ = await BuyerMasterServicer.rotating_sequencer_ABP(request=request, context=context,
+                                                                   method_name='RemoveItemFromShoppingCart')
         buyer_cart_exist = await BuyerCart.query.where(and_(BuyerCart.item_id == request.item_id,
                                                             BuyerCart.buyer_id == request.buyer_id,
                                                             BuyerCart.checked_out == False)).gino.first()
@@ -284,6 +287,8 @@ class BuyerMasterServicer(buyer_pb2_grpc.BuyerMasterServicer):
         """
         from models.buyer_cart import BuyerCart
         self.print_request(request, context)
+        request, _, _ = await BuyerMasterServicer.rotating_sequencer_ABP(request=request, context=context,
+                                                                   method_name='ClearCart')
         try:
             await BuyerCart.delete.where(and_(BuyerCart.buyer_id == request.buyer_id,
                                               BuyerCart.checked_out == False)).gino.status()
@@ -426,9 +431,9 @@ class BuyerMasterServicer(buyer_pb2_grpc.BuyerMasterServicer):
                     buyer_cart_purchased = await BuyerCart.query.where(and_(BuyerCart.buyer_id == request.buyer_id,
                                                                             BuyerCart.item_id == cart_item.item_id,
                                                                             BuyerCart.checked_out == True)).gino.first()
-                    # if buyer_cart_purchased != None:
-                    #     await cart_item.update(seller_review=buyer_cart_purchased.seller_review.name).apply()
-                    # await cart_item.update(checked_out=True).apply()
+                    if buyer_cart_purchased != None:
+                        await cart_item.update(seller_review=buyer_cart_purchased.seller_review.name).apply()
+                    await cart_item.update(checked_out=True).apply()
                     await seller.update(num_items_sold=seller.num_items_sold+cart_item.quantity).apply()
                 else:
                     await cart_item.delete()
@@ -451,6 +456,8 @@ class BuyerMasterServicer(buyer_pb2_grpc.BuyerMasterServicer):
         from models.items import Items
         from database import db_customer as db
         self.print_request(request, context)
+        request, _, _ = await BuyerMasterServicer.rotating_sequencer_ABP(request=request, context=context,
+                                                                   method_name='ProvideFeedback')
         buyer_carts = await BuyerCart.query.where(and_(BuyerCart.item_id == request.item_id,
                                                        BuyerCart.buyer_id == request.buyer_id,
                                                        BuyerCart.checked_out == True)).gino.all()
