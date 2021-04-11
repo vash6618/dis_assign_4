@@ -21,7 +21,7 @@ async def serve(buyer_master_servicer) -> None:
     grpc_port_number = str(sys.argv[3])
     # sock.sendto(b"vasu", ('127.0.0.1', 5006))
     buyer_pb2_grpc.add_BuyerMasterServicer_to_server(servicer=buyer_master_servicer, server=server)
-    listen_addr = '127.0.0.1:' + grpc_port_number
+    listen_addr = '0.0.0.0:' + grpc_port_number
     server.add_insecure_port(listen_addr)
     logging.info("Starting server on %s", listen_addr)
     await server.start()
