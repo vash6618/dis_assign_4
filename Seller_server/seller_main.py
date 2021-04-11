@@ -12,8 +12,8 @@ async def serve(item_master_servicer) -> None:
     server = grpc.aio.server()
     await database.connect_db(get_current_server_number())
     items_pb2_grpc.add_ItemMasterServicer_to_server(servicer=item_master_servicer, server=server)
-    grpc_port_number = int(sys.argv[2])
-    listen_addr = '127.0.0.1:' + str(grpc_port_number)
+    grpc_port_number = int(sys.argv[3])
+    listen_addr = '0.0.0.0:' + str(grpc_port_number)
     server.add_insecure_port(listen_addr)
     logging.info("Starting server on %s", listen_addr)
     await server.start()
@@ -28,7 +28,7 @@ async def serve(item_master_servicer) -> None:
 
 async def listen_on_udp():
     from config import init_sock
-    init_udp_port(int(sys.argv[3]))
+    init_udp_port(int(sys.argv[2]))
     init_sock()
     from config import sock
     while True:
