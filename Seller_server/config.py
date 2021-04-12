@@ -120,7 +120,7 @@ UDP_PORT = 5020
 sequence_messsages = {}
 request_messages = {}
 sock = None
-UDP_IP = "127.0.0.1"
+UDP_IP = "0.0.0.0"
 
 
 def init_sock():
