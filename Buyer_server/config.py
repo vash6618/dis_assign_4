@@ -18,7 +18,7 @@ class Financial_transactions:
     failure = 'Failure'
 
 class UDP_constants:
-    UDP_IP = "127.0.0.1"
+    UDP_IP = "0.0.0.0"
 
 
 global_sequence_number = 0
