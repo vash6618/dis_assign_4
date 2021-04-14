@@ -1,24 +1,24 @@
-# Programming Assignment 2
+# Programming Assignment 4
 # People involved in the assignment :- 
 # Vasu Sharma and Manan Khasgiwale
 
 # Current state of the system
-    # Clients are running on terminal.
-    # Clients access the respective proxy/frontend servers via rest calls to load balancer.
-    # The frontend server calls the backend db layer via grpc calls. This also happens via a load balancer on top of db layer. 
-    # The are three instances each of customer and product database running on Cloud SQL(Postgre). Each server interacts with each db instance. 
-    # Raft is running for the product database calls and Rotating Sequencer ABP is running for customer database calls.
+    Clients are running on terminal.
+    Clients access the respective proxy/frontend servers via rest calls to load balancer.
+    The frontend server calls the backend db layer via grpc calls. This also happens via a load balancer on top of db layer. 
+    The are three instances each of customer and product database running on Cloud SQL(Postgre). Each server interacts with each db instance. 
+    Raft is running for the product database calls and Rotating Sequencer ABP is running for customer database calls.
 
 # Assumptions
     # 
 
 # How to run
-    # Run the instances for product and customer database.
-    # Run the respective servers on google cloud.
-    # Connect to cloud via buyer/seller client from terminal.
+    Run the instances for product and customer database.
+    Run the respective servers on google cloud.
+    Connect to cloud via buyer/seller client from terminal.
 
 # Round trip latencies for APIs
-    # Average response time for each client function when all replicas run normally (no failures).
+    Average response time for each client function when all replicas run normally (no failures).
         Seller APIs
             1) Create Seller Account: 786.277 ms
             2) Login using Seller Account: 215.585 ms/1532.637 ms/2495.447 ms
@@ -43,7 +43,7 @@
             11) Get Seller rating: 394.936 ms
             12) Get Purchase history: 1061.613 ms
 
-    # Average response time for each client function when one server-side sellers interface replica and one server side buyers interface to which some of the clients are connected fail.
+    Average response time for each client function when one server-side sellers interface replica and one server side buyers interface to which some of the clients are connected fail.
        Seller APIs
             1) Create Seller Account: 464.261 ms
             2) Login using Seller Account: 215.585 ms
@@ -68,7 +68,7 @@
             11) Get Seller rating: 185.848 ms
             12) Get Purchase history: 267.284 ms
 
-    # Average response time for each client function when one product database replica (not the leader) fails.
+    Average response time for each client function when one product database replica (not the leader) fails.
        Seller APIs
             1) Create Seller Account: 464.261 ms
             2) Login using Seller Account: 215.585 ms
@@ -82,7 +82,7 @@
         Buyer APIs
              9) Make purchase: 792.865 ms
 
-    # Average response time for each client function when the product database replica acting as leader fails.
+    Average response time for each client function when the product database replica acting as leader fails.
        Seller APIs
             1) Create Seller Account: 464.261 ms
             2) Login using Seller Account: 215.585 ms
