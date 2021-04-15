@@ -3,22 +3,35 @@
 # Vasu Sharma and Manan Khasgiwale
 
 # Current state of the system
-    Clients are running on terminal.
-    Clients access the respective proxy/frontend servers via rest calls to load balancer.
-    The frontend server calls the backend db layer via grpc calls. This also happens via a load 
-    balancer on top of db layer. 
-    The are three instances each of customer and product database running on Cloud SQL (Postgre). 
-    Each server interacts with each db instance. 
-    Raft is running for the product database calls and Rotating Sequencer ABP is running for 
-    customer database calls.
+    1) Clients are running on terminal.
+    2) Clients access the respective proxy/frontend servers via rest calls to load balancer.
+    3) The frontend server calls the backend db layer via grpc calls. This also happens via a load 
+       balancer on top of db layer. 
+    4) The are three instances each of customer and product database running on Cloud SQL (Postgre). 
+        Each server interacts with their respective db instance. 
+    5) Raft is running for the product database calls and Rotating Sequencer ABP is running for 
+       customer database calls. Raft is implemented using the pysyncobj library.
 
 # Assumptions
-    # 
+    1) The latency values for failed leader is calculated on the assumption that the first server started 
+        using the pysyncobj library is the raft leader.
+    2) In the retransmit case for the Rotating sequencer atomic broadcast protocol, we are delivering the message
+        because our underlying assumption is that if we don't have the respective request and sequence messages, 
+        then the message won't be delivered.
+    3) In make purchase while checking out the items if the item availability is less than the quantity in 
+       buyer cart then we are removing that item from the current cart. We will bill the other items while 
+       making purchase and exclude this item.
+    4) We are taking item_id and feedback from the buyer for provide_feedback api. We only allow one item feedback 
+       per api call. If the buyer wants to provide feedback for other items then the buyer will use the same api
+       again.
+    5) We don't update the state of the system if the operations lead to illogical state which makes the system 
+       fault tolerant.
+    
 
 # How to run
     Run the instances for product and customer database.
     Run the respective servers on google cloud.
-    Connect to cloud via buyer/seller client from terminal.
+    Connect to cloud via buyer/seller client from terminal (via load balancer IPs).
 
 # Round trip latencies for APIs
     Average response time for each client function when all replicas run normally (no failures).
