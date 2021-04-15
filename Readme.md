@@ -49,53 +49,76 @@
     Average response time for each client function when one server-side sellers interface replica and 
     one server side buyers interface to which some of the clients are connected fail.
        Seller APIs
-            1) Create Seller Account: 464.261 ms
-            2) Login using Seller Account: 215.585 ms
+            1) Create Seller Account: 1499.99 ms
+            2) Login using Seller Account: 224.239 ms
             3) Logout: 145.294 ms
-            4) Put an item for sale: 422.679 ms
-            5) Change the sale price of an item: 228.51 ms
-            6) Remove an item for sale: 288.625 ms
-            7) Display items currently on sale put up by this seller: 215.904 ms
-            8) Get seller rating: 211.828 ms
+            4) Put an item for sale: 1322.2469 ms
+            5) Change the sale price of an item: 1607.033 ms
+            6) Remove an item for sale: 427.188 ms
+            7) Display items currently on sale put up by this seller: 659.877 ms
+            8) Get seller rating: 253.307 ms
 
         Buyer APIs
-             1) Create Buyer Account: 404.968 ms
-             2) Login using Buyer Account: 221.506 ms
+             1) Create Buyer Account: 1819.93 ms
+             2) Login using Buyer Account: 2157.1189 ms
              3) Logout: 140.996 ms
-             4) Search items for sale: 526.507 ms
-             5) Add item to the shopping cart: 471.546 ms
-             6) Remove item from the shopping cart: 444.972 ms
-             7) Clear the shopping cart: 208.482 ms
-             8) Display the shopping cart: 258.078 ms
-             9) Make purchase: 792.865 ms
-            10) Provide feedback: 467.861 ms
-            11) Get Seller rating: 185.848 ms
-            12) Get Purchase history: 267.284 ms
+             4) Search items for sale: 536.93 ms
+             5) Add item to the shopping cart: 1752.93 ms
+             6) Remove item from the shopping cart: 250.567 ms
+             7) Clear the shopping cart: 205.098 ms
+             8) Display the shopping cart: 1864.92 ms
+             9) Make purchase: 4661.329 ms
+            10) Provide feedback: 2356.8889 ms
+            11) Get Seller rating: 2177.232 ms
+            12) Get Purchase history: 1996.826 ms
 
     Average response time for each client function when one product database replica (not the leader) fails.
        Seller APIs
-            1) Create Seller Account: 464.261 ms
-            2) Login using Seller Account: 215.585 ms
-            3) Logout: 145.294 ms
-            4) Put an item for sale: 422.679 ms
-            5) Change the sale price of an item: 228.51 ms
-            6) Remove an item for sale: 288.625 ms
-            7) Display items currently on sale put up by this seller: 215.904 ms
-            8) Get seller rating: 211.828 ms
+            1) Create Seller Account: 405.594 ms
+            2) Login using Seller Account: 1154.538 ms
+            3) Logout: 69.406 ms
+            4) Put an item for sale: 454.423 ms
+            5) Change the sale price of an item: 418.366 ms
+            6) Remove an item for sale: 1378.5829 ms
+            7) Display items currently on sale put up by this seller: 390.518 ms
+            8) Get seller rating: 389.079 ms
 
         Buyer APIs
-             9) Make purchase: 792.865 ms
+             1) Create Buyer Account: 1371.832 ms
+             2) Login using Buyer Account: 931.579 ms
+             3) Logout: 58.656 ms
+             4) Search items for sale: 334.937  ms
+             5) Add item to the shopping cart: 7031.433 ms/288.56 ms
+             6) Remove item from the shopping cart: 2332.545 ms
+             7) Clear the shopping cart: 395.149 ms
+             8) Display the shopping cart: 1576.852 ms
+             9) Make purchase: 2277.727 ms
+            10) Provide feedback: 1765.867 ms
+            11) Get Seller rating: 180.575 ms
+            12) Get Purchase history: 1012.578 ms
+
 
     Average response time for each client function when the product database replica acting as leader fails.
        Seller APIs
-            1) Create Seller Account: 464.261 ms
-            2) Login using Seller Account: 215.585 ms
-            3) Logout: 145.294 ms
-            4) Put an item for sale: 422.679 ms
-            5) Change the sale price of an item: 228.51 ms
-            6) Remove an item for sale: 288.625 ms
-            7) Display items currently on sale put up by this seller: 215.904 ms
-            8) Get seller rating: 211.828 ms
+            1) Create Seller Account: 2325.85 ms
+            2) Login using Seller Account: 199.505 ms
+            3) Logout: 64.794 ms
+            4) Put an item for sale: 1711.973 ms
+            5) Change the sale price of an item: 1352.121 ms
+            6) Remove an item for sale: 1199.219 ms
+            7) Display items currently on sale put up by this seller: 396.707 ms
+            8) Get seller rating: 212.994 ms
 
         Buyer APIs
-             9) Make purchase: 792.865 ms
+             1) Create Buyer Account: 1716.159 ms
+             2) Login using Buyer Account: 215.579 ms
+             3) Logout: 70.304 ms
+             4) Search items for sale: 1991.684  ms
+             5) Add item to the shopping cart: 652.707 ms
+             6) Remove item from the shopping cart: 1017.937 ms
+             7) Clear the shopping cart: 1659.025 ms
+             8) Display the shopping cart: 984.212 ms
+             9) Make purchase: 2904.433 ms
+            10) Provide feedback: 2407.712 ms
+            11) Get Seller rating: 181.038 ms
+            12) Get Purchase history: 374.473 ms
