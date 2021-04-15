@@ -32,6 +32,11 @@ class ItemMasterServicer(items_pb2_grpc.ItemMasterServicer):
 
     @staticmethod
     async def rotating_sequencer_ABP(request, context, method_name, string_id=None):
+        if context == Request_Constants.retransmit_context:
+            random_id = request.get(string_id)
+            request = request['request']
+            is_raft_execute = False
+            return request, random_id, is_raft_execute
 
         from config import sock
 
