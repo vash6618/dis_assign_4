@@ -13,12 +13,12 @@ class DBConstants:
 
 
 class Financial_transactions:
-    host_and_port_wsdl = 'http://35.208.176.241:8002/?wsdl'
+    host_and_port_wsdl = 'http://10.128.0.3:8002/?wsdl'
     success = 'Success'
     failure = 'Failure'
 
 class UDP_constants:
-    UDP_IP = "127.0.0.1"
+    UDP_IP = "0.0.0.0"
 
 
 global_sequence_number = 0
@@ -30,8 +30,8 @@ request_messages = {}
 raft_buyer = None
 
 class ABP_servers:
-    hosts = [('10.180.0.5', 5005), ('10.128.0.6', 5005), ('10.128.0.7', 5005)]
-    raft_servers = [('10.180.0.5', 5010), ('10.128.0.6', 5010), ('10.128.0.7', 5010)]
+    hosts = [('10.180.0.5', 5005), ('10.180.0.13', 5006), ('10.180.0.12', 5007)]
+    raft_servers = [('10.180.0.5', 5010), ('10.180.0.13', 5010), ('10.180.0.12', 5010)]
     total_hosts = len(hosts)
 
 class Request_Constants:

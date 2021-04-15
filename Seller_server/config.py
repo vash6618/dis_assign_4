@@ -13,8 +13,8 @@ class DBConstants:
 
 
 class ABP_servers:
-    hosts = [('10.180.0.3', 5005), ('10.128.0.4', 5005), ('10.128.0.5', 5005)]
-    raft_servers = [('10.180.0.3', 5010), ('10.128.0.4', 5010), ('10.128.0.5', 5010)]
+    hosts = [('10.180.0.3', 5005), ('10.180.0.10', 5006), ('10.180.0.11', 5007)]
+    raft_servers = [('10.180.0.3', 5010), ('10.180.0.10', 5010), ('10.180.0.11', 5010)]
     total_hosts = len(hosts)
 
 
@@ -121,7 +121,7 @@ UDP_PORT = 5020
 sequence_messsages = {}
 request_messages = {}
 sock = None
-UDP_IP = "127.0.0.1"
+UDP_IP = "0.0.0.0"
 
 
 def init_sock():
