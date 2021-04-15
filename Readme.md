@@ -5,9 +5,12 @@
 # Current state of the system
     Clients are running on terminal.
     Clients access the respective proxy/frontend servers via rest calls to load balancer.
-    The frontend server calls the backend db layer via grpc calls. This also happens via a load balancer on top of db layer. 
-    The are three instances each of customer and product database running on Cloud SQL(Postgre). Each server interacts with each db instance. 
-    Raft is running for the product database calls and Rotating Sequencer ABP is running for customer database calls.
+    The frontend server calls the backend db layer via grpc calls. This also happens via a load 
+    balancer on top of db layer. 
+    The are three instances each of customer and product database running on Cloud SQL (Postgre). 
+    Each server interacts with each db instance. 
+    Raft is running for the product database calls and Rotating Sequencer ABP is running for 
+    customer database calls.
 
 # Assumptions
     # 
@@ -43,7 +46,8 @@
             11) Get Seller rating: 394.936 ms
             12) Get Purchase history: 1061.613 ms
 
-    Average response time for each client function when one server-side sellers interface replica and one server side buyers interface to which some of the clients are connected fail.
+    Average response time for each client function when one server-side sellers interface replica and 
+    one server side buyers interface to which some of the clients are connected fail.
        Seller APIs
             1) Create Seller Account: 464.261 ms
             2) Login using Seller Account: 215.585 ms
