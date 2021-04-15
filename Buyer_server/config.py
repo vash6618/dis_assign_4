@@ -36,6 +36,7 @@ class ABP_servers:
 
 class Request_Constants:
     context = 'origin_server'
+    retransmit_context = 'origin_retransmit'
 
 
 sock = None

@@ -8,7 +8,7 @@ import socket
 import sys
 from config import init_current_server_number, init_udp_port, set_global_sequence_number, get_sequence_number, \
     insert_into_sequence_messages, get_current_server_number, insert_into_request_messages, get_messages_dict, \
-    init_raft_buyer, init_sql_alchemy_obj
+    init_raft_buyer, init_sql_alchemy_obj, Request_Constants
 
 udp_task_queue = asyncio.Queue()
 
@@ -46,7 +46,7 @@ async def listen_on_udp():
             if request_data.get('message_type') == 'request_msg':
                 # print("this is a request message :- ",  request_data)
                 method_name = request_data['method_name']
-                await getattr(buyer_master_servicer, method_name)(request=request_data, context='origin_server')
+                await getattr(buyer_master_servicer, method_name)(request=request_data, context=Request_Constants.context)
 
             elif request_data.get('message_type') == 'sequence_msg':
                 # check the sequence message conditions 4 in the google sheet
@@ -68,6 +68,8 @@ async def listen_on_udp():
                 req_msg = request_data.get('req_msg')
                 insert_into_sequence_messages(sequence_message_number, seq_msg[sequence_message_number])
                 insert_into_request_messages(seq_msg[sequence_message_number][0], req_msg[seq_msg[sequence_message_number][0]])
+                method_name = req_msg.get('method_name')
+                await getattr(buyer_master_servicer, method_name)(request=request_data, context=Request_Constants.retransmit_context)
 
             else:
 

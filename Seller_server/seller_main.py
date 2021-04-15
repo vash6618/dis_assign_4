@@ -5,7 +5,8 @@ import items_pb2_grpc
 import database
 from database.item_master import ItemMasterServicer
 from config import init_current_server_number, init_raft_seller, init_sql_alchemy_obj, get_current_server_number, \
-    init_udp_port, insert_into_sequence_messages, insert_into_request_messages, get_messages_dict, set_global_sequence_number
+    init_udp_port, insert_into_sequence_messages, insert_into_request_messages, get_messages_dict, \
+    set_global_sequence_number, Request_Constants
 
 
 async def serve(item_master_servicer) -> None:
@@ -38,7 +39,7 @@ async def listen_on_udp():
             if request_data.get('message_type') == 'request_msg':
                 # print("this is a request message :- ",  request_data)
                 method_name = request_data['method_name']
-                await getattr(item_master_servicer, method_name)(request=request_data, context='origin_server')
+                await getattr(item_master_servicer, method_name)(request=request_data, context=Request_Constants.context)
 
             elif request_data.get('message_type') == 'sequence_msg':
                 # check the sequence message conditions 4 in the google sheet
@@ -60,6 +61,9 @@ async def listen_on_udp():
                 req_msg = request_data.get('req_msg')
                 insert_into_sequence_messages(sequence_message_number, seq_msg[sequence_message_number])
                 insert_into_request_messages(seq_msg[sequence_message_number][0], req_msg[seq_msg[sequence_message_number][0]])
+                method_name = req_msg.get('method_name')
+                await getattr(item_master_servicer, method_name)(request=request_data,
+                                                                 context=Request_Constants.retransmit_context)
 
             else:
 
